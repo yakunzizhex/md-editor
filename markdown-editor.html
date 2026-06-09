@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>md/html Editor</title>
+<!-- Favicon Standar Browser -->
+<link rel="shortcut icon" href="favicon/favicon.ico" type="image/x-icon">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+<!-- Favicon Apple / iOS -->
+<link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-icon-180x180.png">
+<!-- Favicon Android & Web App -->
+<link rel="icon" type="image/png" sizes="192x192" href="favicon/android-icon-192x192.png">
+<link rel="manifest" href="favicon/manifest.json">
+<style>
+:root {
+  --bg:#0f1117; --sur:#1a1d27; --sur2:#22263a; --bor:#2e3348;
+  --txt:#e2e6f0; --mut:#7a82a0; --acc:#5b8af0; --acc2:#3d6de0;
+  --ok:#3ecf8e; --warn:#f0a05b;
+  --fm:'JetBrains Mono','Fira Code','Cascadia Code',monospace;
+  --fu:'Inter','Segoe UI',system-ui,sans-serif;
+  --r:6px; --hh:46px; --th:38px;
+}
+.light {
+  --bg:#f4f6fb; --sur:#ffffff; --sur2:#eef0f8; --bor:#d0d5ea;
+  --txt:#1a1d2e; --mut:#6b7294; --acc:#3d6de0; --acc2:#2a55c0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:var(--fu);background:var(--bg);color:var(--txt)}
+
+/* HEADER */
+#hdr{display:flex;align-items:center;gap:8px;height:var(--hh);padding:0 12px;background:var(--sur);border-bottom:1px solid var(--bor);flex-shrink:0}
+.logo{font-size:13px;font-weight:700;color:var(--acc);letter-spacing:.02em;white-space:nowrap}
+.logo em{color:var(--mut);font-style:normal;font-weight:400}
+.spc{flex:1}
+.stats{font-size:11px;color:var(--mut);display:flex;gap:10px}
+.stats b{color:var(--txt);font-weight:600}
+.btn{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:var(--r);font-size:12px;font-family:var(--fu);font-weight:500;border:1px solid var(--bor);background:transparent;color:var(--txt);cursor:pointer;white-space:nowrap;transition:background .12s}
+.btn:hover{background:var(--sur2)}
+.btn.ic{padding:4px 7px}
+.btn svg{width:13px;height:13px;flex-shrink:0}
+.btn.pri{background:var(--acc);color:#fff;border-color:var(--acc)}
+.btn.pri:hover{background:var(--acc2);border-color:var(--acc2)}
+.btn.active{background:var(--acc);color:#fff;border-color:var(--acc)}
+.gdv{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:var(--r);font-size:12px;font-weight:500;cursor:pointer;border:1px solid #4285f433;background:#4285f410;color:#4285f4;transition:background .12s}
+.gdv:hover{background:#4285f420}
+.gdv.on{border-color:#3ecf8e44;background:#3ecf8e10;color:var(--ok)}
+.gdv svg{width:13px;height:13px;flex-shrink:0}
+.pill{font-size:10px;padding:1px 6px;border-radius:9px;background:var(--sur2);border:1px solid var(--bor);color:var(--mut)}
+
+/* TOOLBAR */
+#tb{display:flex;align-items:center;gap:2px;padding:0 6px;height:var(--th);background:var(--sur);border-bottom:1px solid var(--bor);flex-shrink:0}
+.tb{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;border-radius:4px;font-size:12px;font-family:var(--fu);font-weight:700;border:none;background:transparent;color:var(--mut);cursor:pointer;transition:background .1s,color .1s}
+.tb:hover{background:var(--sur2);color:var(--txt)}
+.tb svg{width:13px;height:13px}
+.sep{width:1px;height:16px;background:var(--bor);margin:0 3px;flex-shrink:0}
+.lbl{font-size:11px;color:var(--mut);padding:0 3px}
+
+/* MAIN */
+#main{display:flex;height:calc(100vh - var(--hh) - var(--th));overflow:hidden;position:relative}
+
+/* EDITOR PANE */
+#epane{display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.phdr{display:flex;align-items:center;gap:7px;height:28px;padding:0 10px;background:var(--sur2);border-bottom:1px solid var(--bor);font-size:10px;color:var(--mut);letter-spacing:.07em;text-transform:uppercase;flex-shrink:0}
+#ewrap{display:flex;flex:1;overflow:hidden}
+
+#lnum{
+  flex-shrink:0;width:40px;
+  padding:10px 8px 10px 0;
+  font-family:var(--fm);font-size:13px;line-height:21.32px;
+  color:var(--bor);text-align:right;
+  overflow:hidden;white-space:pre;
+  background:var(--sur);border-right:1px solid var(--bor);
+  user-select:none;
+}
+
+#ed{
+  flex:1;resize:none;border:none;outline:none;
+  background:var(--sur);color:var(--txt);
+  font-family:var(--fm);font-size:13px;line-height:1.64;
+  padding:10px 12px;tab-size:2;
+  caret-color:#ffffff;
+  overflow-y:auto;overflow-x:auto;
+  /* word-wrap toggled by JS */
+  white-space:pre;word-wrap:normal;
+}
+#ed::selection{background:#5b8af038}
+#lnum::-webkit-scrollbar{width:0;height:0}
+#ed::-webkit-scrollbar{width:6px}
+#ed::-webkit-scrollbar-track{background:transparent}
+#ed::-webkit-scrollbar-thumb{background:var(--bor);border-radius:3px}
+
+/* DIVIDER */
+#dv{width:4px;flex-shrink:0;cursor:col-resize;background:var(--bor);transition:background .15s;z-index:20;position:relative}
+#dv:hover,#dv.drag{background:var(--acc)}
+#ov{display:none;position:fixed;inset:0;z-index:9999;cursor:col-resize;background:transparent}
+#ov.on{display:block}
+
+/* PREVIEW PANE */
+#ppane{display:flex;flex-direction:column;overflow:hidden;flex:1;min-width:0}
+#ppane .phdr{border-left:1px solid var(--bor)}
+#pwrap{flex:1;overflow:hidden;background:var(--sur);border-left:1px solid var(--bor)}
+#pf{width:100%;height:100%;border:none;display:block}
+
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dot.b{background:var(--acc)}.dot.g{background:var(--ok)}
+
+/* MODAL */
+.mbg{position:fixed;inset:0;background:#00000080;display:flex;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(3px)}
+.mbg.h{display:none}
+.mbox{background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:24px;width:440px;max-width:92vw}
+.mbox h2{font-size:15px;font-weight:600;margin-bottom:10px}
+.mbox p{font-size:12px;color:var(--mut);line-height:1.6;margin-bottom:8px}
+.mstep{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--mut);line-height:1.5;margin-bottom:8px}
+.mnum{width:18px;height:18px;border-radius:50%;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:2px}
+.mstep a{color:var(--acc)}
+.macts{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.mlogo{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--txt);margin-bottom:14px}
+
+/* TOAST */
+#toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);padding:7px 14px;font-size:12px;box-shadow:0 4px 18px #00000050;z-index:300;opacity:0;transition:opacity .18s;pointer-events:none;white-space:nowrap}
+#toast.on{opacity:1}
+
+@media(max-width:640px){#dv,#ppane,.stats{display:none}}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <div class="logo">md<em>/</em>html <em>editor</em></div>
+  <div class="stats">
+    <span>Kata: <b id="wc">0</b></span>
+    <span>Baris: <b id="lc">1</b></span>
+    <span>Karakter: <b id="cc">0</b></span>
+  </div>
+  <div class="spc"></div>
+  <!-- Word Wrap toggle -->
+  <button class="btn ic" id="wrapbtn" onclick="toggleWrap()" title="Toggle Word Wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="3 8 7 4 11 8"/><line x1="7" y1="4" x2="7" y2="14"/>
+      <path d="M20 12H7"/><polyline points="16 8 20 12 16 16"/>
+    </svg>
+  </button>
+  <button class="btn ic" onclick="toggleTheme()" title="Ganti tema">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="5"/>
+      <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+      <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+    </svg>
+  </button>
+  <button class="btn" onclick="exportMD()" title="Unduh Markdown (Ctrl+S)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>.md
+  </button>
+  <button class="btn" onclick="exportHTML()" title="Unduh HTML">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>.html
+  </button>
+  <button class="gdv" id="gdvbtn" onclick="openDM()">
+    <svg viewBox="0 0 87.3 78" fill="currentColor" width="13" height="13">
+      <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3L27.5 50H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+      <path d="M43.65 25L29.9 1.2C28.55 2 27.4 3.1 26.6 4.5L1.2 49.5c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
+      <path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 11.65z" fill="#ea4335"/>
+      <path d="M43.65 25L57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+      <path d="M59.8 54.5H27.5L13.75 76.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+      <path d="M73.4 26.5L60.7 4.5C59.9 3.1 58.75 2 57.4 1.2L43.65 25 59.8 54.5h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+    </svg>
+    <span id="gdvlbl">Google Drive</span>
+    <span class="pill" id="gdvpill">OFF</span>
+  </button>
+</div>
+
+<div id="tb">
+  <span class="lbl">Format:</span>
+  <button class="tb" title="Bold Ctrl+B"       onclick="twrap('**','**')"><b>B</b></button>
+  <button class="tb" title="Italic Ctrl+I"      onclick="twrap('_','_')"><i style="font-style:italic">I</i></button>
+  <button class="tb" title="Strikethrough"      onclick="twrap('~~','~~')"><s>S</s></button>
+  <div class="sep"></div>
+  <button class="tb" title="Heading 1"          onclick="tline('# ')">H1</button>
+  <button class="tb" title="Heading 2"          onclick="tline('## ')">H2</button>
+  <button class="tb" title="Heading 3"          onclick="tline('### ')">H3</button>
+  <div class="sep"></div>
+  <button class="tb" title="Inline Code Ctrl+`" onclick="twrap('`','`')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+  </button>
+  <button class="tb" title="Code Block"         onclick="tcodeblock()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 9l-3 3 3 3M16 9l3 3-3 3"/></svg>
+  </button>
+  <button class="tb" title="Link Ctrl+K"        onclick="tlink()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+  </button>
+  <button class="tb" title="Image (teks terblok = alt text)" onclick="timage()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+  </button>
+  <div class="sep"></div>
+  <button class="tb" title="Unordered List"     onclick="tline('- ')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.3" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.3" fill="currentColor" stroke="none"/></svg>
+  </button>
+  <button class="tb" title="Ordered List"       onclick="tline('1. ')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4M4 10h2M6 18H4c0-1 2-2 2-3s-1-2-2-1"/></svg>
+  </button>
+  <button class="tb" title="Blockquote"         onclick="tline('> ')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
+  </button>
+  <button class="tb" title="Horizontal Rule" onclick="thr()">—</button>
+  <div class="sep"></div>
+  <button class="btn" style="height:26px;font-size:11px;color:var(--mut)" onclick="clearEd()">Hapus</button>
+</div>
+
+<div id="main">
+  <div id="epane">
+    <div class="phdr"><span class="dot b"></span>&nbsp;Editor</div>
+    <div id="ewrap">
+      <div id="lnum"></div>
+      <textarea id="ed" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"
+        placeholder="Ketik Markdown atau HTML di sini..."></textarea>
+    </div>
+  </div>
+  <div id="dv"></div>
+  <div id="ppane">
+    <div class="phdr"><span class="dot g"></span>&nbsp;Live Preview</div>
+    <div id="pwrap">
+      <!-- Preview: allow-scripts for doCopy postMessage, allow-popups for links -->
+      <iframe id="pf" sandbox="allow-scripts allow-popups" title="Preview"></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- overlay: blocks iframe stealing pointer events during divider drag -->
+<div id="ov"></div>
+
+<!-- GOOGLE DRIVE MODAL -->
+<div class="mbg h" id="dm">
+  <div class="mbox">
+    <div class="mlogo">
+      <svg viewBox="0 0 87.3 78" fill="currentColor" width="16" height="16">
+        <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3L27.5 50H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+        <path d="M43.65 25L29.9 1.2C28.55 2 27.4 3.1 26.6 4.5L1.2 49.5c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
+        <path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 11.65z" fill="#ea4335"/>
+        <path d="M43.65 25L57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+        <path d="M59.8 54.5H27.5L13.75 76.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+        <path d="M73.4 26.5L60.7 4.5C59.9 3.1 58.75 2 57.4 1.2L43.65 25 59.8 54.5h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+      </svg>
+      Google Drive Sync
+    </div>
+
+    <!-- VIEW 1: Input Client ID -->
+    <div id="dm-setup">
+      <h2 style="margin-bottom:6px">Hubungkan Google Drive</h2>
+      <p style="margin-bottom:14px">Masukkan <b>OAuth 2.0 Client ID</b> dari Google Cloud Console untuk mulai sync otomatis.</p>
+
+      <label style="font-size:11px;color:var(--mut);display:block;margin-bottom:4px">CLIENT ID</label>
+      <input id="cid-input" type="text" placeholder="123456789-xxx.apps.googleusercontent.com"
+        style="width:100%;padding:8px 10px;border-radius:var(--r);border:1px solid var(--bor);background:var(--sur2);color:var(--txt);font-size:12px;font-family:var(--fu);outline:none;margin-bottom:4px">
+      <p id="cid-err" style="font-size:11px;color:var(--warn);min-height:16px;margin-bottom:10px"></p>
+
+      <details style="margin-bottom:14px">
+        <summary style="font-size:11px;color:var(--mut);cursor:pointer;user-select:none">Belum punya Client ID? Klik untuk panduan singkat</summary>
+        <div style="margin-top:8px;border-left:2px solid var(--bor);padding-left:10px">
+          <div class="mstep"><div class="mnum">1</div><div>Buka <a href="https://console.cloud.google.com" target="_blank" style="color:var(--acc)">console.cloud.google.com</a> → buat project</div></div>
+          <div class="mstep"><div class="mnum">2</div><div>APIs &amp; Services → Library → aktifkan <b>Google Drive API</b></div></div>
+          <div class="mstep"><div class="mnum">3</div><div>Credentials → <b>Create Credentials</b> → OAuth 2.0 Client ID → pilih <b>Web application</b></div></div>
+          <div class="mstep"><div class="mnum">4</div><div>Di <i>Authorized JavaScript origins</i> tambahkan: <code style="font-size:10px">http://localhost</code> dan <code style="font-size:10px">null</code> (untuk file://)</div></div>
+          <div class="mstep"><div class="mnum">5</div><div>Copy Client ID → paste di kolom di atas → klik Hubungkan</div></div>
+        </div>
+      </details>
+
+      <div class="macts">
+        <button class="btn" onclick="closeDM()">Batal</button>
+        <button class="btn pri" onclick="initDrive()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+          Hubungkan
+        </button>
+      </div>
+    </div>
+
+    <!-- VIEW 2: Connected state -->
+    <div id="dm-connected" style="display:none;text-align:center;padding:8px 0">
+      <div style="font-size:32px;margin-bottom:10px">✅</div>
+      <h2 style="margin-bottom:6px">Google Drive Terhubung</h2>
+      <p id="dm-user" style="margin-bottom:16px;font-size:13px"></p>
+      <p style="font-size:12px;color:var(--mut);margin-bottom:16px"><b>Ctrl+S</b> akan menyimpan ke Drive sebagai <code>dokumen.md</code></p>
+      <div class="macts" style="justify-content:center;gap:10px">
+        <button class="btn" onclick="closeDM()">Tutup</button>
+        <button class="btn" onclick="disconnectDrive()" style="color:var(--warn);border-color:var(--warn)">Putuskan Koneksi</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════
+const GDRIVE_CID   = '';
+const GDRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+
+// ── ELEMENTS ──
+const ed    = document.getElementById('ed');
+const lnum  = document.getElementById('lnum');
+const pf    = document.getElementById('pf');
+const epane = document.getElementById('epane');
+const dv    = document.getElementById('dv');
+const ov    = document.getElementById('ov');
+
+// ── STATE ──
+let isDark = true, wordWrap = false, driveToken = null, inputTimer = null;
+
+// ══════════════════════════════════════════
+// UNDO STACK
+// Reason: direct ed.value = ... bypasses the browser's native undo.
+// We maintain our own stack and hook Ctrl+Z / Ctrl+Y.
+// Each toolbar action calls editorExec() which pushes to this stack.
+// Normal typing uses the browser's own undo (we only snapshot on toolbar actions).
+// ══════════════════════════════════════════
+const UNDO_LIMIT = 300;
+let undoStack = [], redoStack = [];
+let undoDebounce = null;
+
+function snapshotUndo() {
+  // Clear any pending debounced snapshot — this is a deliberate checkpoint
+  clearTimeout(undoDebounce);
+  _pushUndo();
+}
+
+function _pushUndo() {
+  const top = undoStack[undoStack.length - 1];
+  const cur = ed.value;
+  if (top && top.val === cur) return;  // no change, skip
+  undoStack.push({ val: cur, ss: ed.selectionStart, se: ed.selectionEnd });
+  if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+  redoStack = [];
+}
+
+function applyUndo() {
+  if (!undoStack.length) return;
+  // Push current state to redo
+  redoStack.push({ val: ed.value, ss: ed.selectionStart, se: ed.selectionEnd });
+  const s = undoStack.pop();
+  ed.value = s.val;
+  ed.selectionStart = s.ss;
+  ed.selectionEnd   = s.se;
+  ed.focus();
+  updateAll();
+}
+
+function applyRedo() {
+  if (!redoStack.length) return;
+  undoStack.push({ val: ed.value, ss: ed.selectionStart, se: ed.selectionEnd });
+  const s = redoStack.pop();
+  ed.value = s.val;
+  ed.selectionStart = s.ss;
+  ed.selectionEnd   = s.se;
+  ed.focus();
+  updateAll();
+}
+
+// ── STARTER ──
+const STARTER = `# Selamat Datang di md/html Editor
+
+Ketik **Markdown** atau HTML murni di panel kiri, lihat hasilnya secara _live_ di kanan.
+
+## Fitur Utama
+
+- ✅ **Live Preview** — 1x Enter = baris baru di preview
+- ✅ **HTML Penuh** — semua tag HTML dirender tanpa sanitasi
+- ✅ **Toggle format** — klik toolbar lagi untuk hapus format
+- ✅ **Undo/Redo** — Ctrl+Z / Ctrl+Y, termasuk aksi toolbar
+- ✅ **Word Wrap** — tombol di header kanan
+- ✅ **Code block** — label bahasa + tombol copy
+
+---
+
+## Contoh HTML Murni
+
+<div style="background:#5b8af020;border-left:3px solid #5b8af0;padding:10px 16px;border-radius:4px;margin:10px 0">
+  <strong>Info Box</strong> — ini adalah HTML murni yang dirender langsung!
+</div>
+
+## Contoh Kode
+
+\`\`\`javascript
+function sapa(nama) {
+  return \`Halo, \${nama}!\`;
+}
+console.log(sapa("Dunia"));
+\`\`\`
+
+## Tabel
+
+| Kolom A | Kolom B | Kolom C |
+|---------|---------|---------|
+| Data 1  | Data 2  | Data 3  |
+| Data 4  | Data 5  | Data 6  |
+
+> **Tip:** Blok teks lalu klik Bold/Italic/Link/Image untuk format otomatis.
+`;
+
+// ══════════════════════════════════════════
+// PREVIEW — postMessage architecture
+// The iframe is loaded ONCE with a shell page.
+// Content updates are sent via postMessage → no reload, no scroll reset.
+// sandbox="allow-scripts" only — no allow-same-origin needed for postMessage.
+// ══════════════════════════════════════════
+
+// The shell page that lives permanently inside the iframe
+const SHELL = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<style id="S"></style>
+<script>
+window.addEventListener('message', function(e) {
+  var d = e.data;
+  if (d.type === 'style') {
+    document.getElementById('S').textContent = d.css;
+  } else if (d.type === 'html') {
+    var sy = window.scrollY;
+    document.body.innerHTML = d.html;
+    // Double rAF: first frame paints, second frame restores scroll reliably
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ window.scrollTo(0, sy); });
+    });
+  } else if (d.type === 'both') {
+    document.getElementById('S').textContent = d.css;
+    document.body.innerHTML = d.html;
+  }
+});
+
+// Copy code: clipboard API is blocked in sandboxed iframe on file://
+// Fallback: use deprecated execCommand which works everywhere
+function doCopy(btn){
+  var pre = btn.closest('.cblk').querySelector('code');
+  var text = pre.innerText;
+  // Try modern API first (works on HTTPS), fall back to execCommand
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){
+      btn.textContent='copied!';
+      setTimeout(function(){btn.textContent='copy'},1600);
+    }).catch(function(){ legacyCopy(btn, text); });
+  } else {
+    legacyCopy(btn, text);
+  }
+}
+function legacyCopy(btn, text){
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try {
+    document.execCommand('copy');
+    btn.textContent='copied!';
+  } catch(err){
+    btn.textContent='fail';
+  }
+  document.body.removeChild(ta);
+  setTimeout(function(){btn.textContent='copy'},1600);
+}
+
+// Links: sandbox blocks navigation — intercept all clicks and open via window.open
+// allow-popups sandbox flag makes window.open work in sandboxed iframe
+document.addEventListener('click', function(e){
+  var a = e.target.closest('a[href]');
+  if (!a) return;
+  e.preventDefault();
+  var href = a.getAttribute('href');
+  if (href && !href.startsWith('#')) {
+    window.open(href, '_blank', 'noopener,noreferrer');
+  }
+});
+<\/script>
+</head><body></body></html>`;
+
+let shellReady = false;
+let pendingHtml = null, pendingCss = null;
+let lastHtml = '', lastCss = '';
+
+function initShell() {
+  shellReady = false;
+  pf.srcdoc = SHELL;
+  pf.onload = function() {
+    // Small delay ensures contentWindow.postMessage is available
+    setTimeout(function() {
+      shellReady = true;
+      if (pendingHtml !== null || pendingCss !== null) {
+        sendToFrame(pendingCss || lastCss, pendingHtml || lastHtml, true);
+        pendingHtml = pendingCss = null;
+      }
+    }, 20);
+  };
+}
+
+function sendToFrame(css, html, force) {
+  // Guard: if shell not ready, queue the update
+  if (!shellReady || !pf.contentWindow) {
+    pendingHtml = html;
+    pendingCss  = css;
+    return;
+  }
+  const cssChanged  = force || css  !== lastCss;
+  const htmlChanged = force || html !== lastHtml;
+  if (!cssChanged && !htmlChanged) return;
+
+  try {
+    if (cssChanged && htmlChanged) {
+      pf.contentWindow.postMessage({ type:'both', css, html }, '*');
+    } else if (cssChanged) {
+      pf.contentWindow.postMessage({ type:'style', css }, '*');
+    } else {
+      pf.contentWindow.postMessage({ type:'html', html }, '*');
+    }
+    lastCss  = css;
+    lastHtml = html;
+  } catch(err) {
+    // contentWindow became unavailable mid-flight — re-init shell
+    shellReady = false;
+    pendingHtml = html;
+    pendingCss  = css;
+    initShell();
+  }
+}
+
+function buildCss() {
+  const D   = isDark;
+  const bg  = D ? '#0f1117' : '#ffffff';
+  const fg  = D ? '#e2e6f0' : '#1a1d2e';
+  const cb  = D ? '#141720' : '#f0f2f8';
+  const cb2 = D ? '#1c2030' : '#e5e8f5';
+  const br  = D ? '#2e3348' : '#d0d4e8';
+  const mu  = D ? '#7a82a0' : '#6b7294';
+  const bq  = D ? '#9aabcc' : '#445588';
+  const sep = D ? '#2e3348' : '#e0e4f0';
+  const etr = D ? '#ffffff06' : '#f7f8fc';
+  return `
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;line-height:1.72;padding:24px 28px;background:${bg};color:${fg};max-width:800px;margin:0 auto}
+h1,h2,h3,h4,h5,h6{margin:1.1em 0 .4em;font-weight:600;line-height:1.3}
+h1{font-size:1.9em;border-bottom:2px solid ${sep};padding-bottom:.25em}
+h2{font-size:1.45em;border-bottom:1px solid ${sep};padding-bottom:.2em}
+h3{font-size:1.15em}h4{font-size:1em}
+p{margin:.55em 0}
+a{color:#5b8af0;text-decoration:none}a:hover{text-decoration:underline}
+strong{font-weight:700}em{font-style:italic}
+del{color:${mu};text-decoration:line-through}
+blockquote{border-left:3px solid #5b8af0;margin:.8em 0;padding:7px 14px;background:#5b8af012;border-radius:0 4px 4px 0;color:${bq}}
+ul,ol{margin:.6em 0 .6em 1.4em}li{margin:.25em 0}
+hr{border:none;border-top:1px solid ${sep};margin:1.4em 0}
+table{border-collapse:collapse;width:100%;margin:.8em 0;font-size:.95em}
+th,td{border:1px solid ${br};padding:7px 11px;text-align:left}
+th{background:${cb};font-weight:600}
+tr:nth-child(even) td{background:${etr}}
+img{max-width:100%;border-radius:4px;display:block;margin:.4em 0}
+.ic{font-family:'JetBrains Mono','Fira Code',monospace;font-size:.85em;background:${cb};border:1px solid ${br};padding:1px 5px;border-radius:3px}
+.cblk{margin:.8em 0;border-radius:6px;overflow:hidden;border:1px solid ${br}}
+.chdr{display:flex;align-items:center;justify-content:space-between;background:${cb2};padding:5px 12px}
+.clang{font-family:'JetBrains Mono','Fira Code',monospace;font-size:11px;color:${mu}}
+.ccopy{background:none;border:1px solid ${br};border-radius:3px;color:${mu};font-size:11px;font-family:'JetBrains Mono','Fira Code',monospace;padding:2px 9px;cursor:pointer}
+.ccopy:hover{background:${cb};color:${fg}}
+pre{background:${cb};padding:13px 14px;overflow-x:auto;margin:0}
+pre code{font-family:'JetBrains Mono','Fira Code',monospace;font-size:12.5px;line-height:1.65;color:${fg}}
+`;
+}
+
+function renderPreview() {
+  const raw   = ed.value;
+  const isDoc = /^\s*<!DOCTYPE/i.test(raw) || /^\s*<html[\s>]/i.test(raw);
+  if (isDoc) {
+    // Full HTML doc: reload shell with the full document embedded
+    // (rare case — only triggers when user types a full HTML document)
+    const html = raw;
+    if (html === lastHtml) return;
+    lastHtml = html; lastCss = '';
+    // For full docs, fall back to srcdoc of the whole thing
+    pf.srcdoc = html;
+    pf.onload = () => { shellReady = false; };
+    return;
+  }
+  const html = mdToHtml(raw);
+  const css  = buildCss();
+  sendToFrame(css, html, false);
+}
+
+// ── INIT ──
+(function init() {
+  const W = document.getElementById('main').offsetWidth || window.innerWidth;
+  epane.style.width = Math.floor((W - 4) / 2) + 'px';
+  ed.value = STARTER;
+  ed.addEventListener('input',   onInput);
+  ed.addEventListener('scroll',  onScroll);
+  ed.addEventListener('keydown', onKey);
+  initShell();
+  requestAnimationFrame(updateAll);
+})();
+
+function onInput() {
+  // Debounced undo snapshot: captures typing in ~600ms chunks
+  clearTimeout(undoDebounce);
+  undoDebounce = setTimeout(_pushUndo, 600);
+
+  clearTimeout(inputTimer);
+  inputTimer = setTimeout(updateAll, 80);
+}
+function updateAll() { renderLineNums(); updateStats(); renderPreview(); }
+
+// ── LINE NUMBERS ──
+function renderLineNums() {
+  const n = ed.value.split('\n').length;
+  let t = '';
+  for (let i = 1; i <= n; i++) t += i + (i < n ? '\n' : '');
+  lnum.textContent = t;
+  lnum.scrollTop = ed.scrollTop;
+}
+function onScroll() { lnum.scrollTop = ed.scrollTop; }
+
+function updateStats() {
+  const v = ed.value;
+  document.getElementById('wc').textContent = v.trim() ? v.trim().split(/\s+/).length : 0;
+  document.getElementById('lc').textContent = v.split('\n').length;
+  document.getElementById('cc').textContent = v.length;
+}
+
+// ── WORD WRAP ──
+function toggleWrap() {
+  wordWrap = !wordWrap;
+  ed.style.whiteSpace  = wordWrap ? 'pre-wrap' : 'pre';
+  ed.style.wordWrap    = wordWrap ? 'break-word' : 'normal';
+  ed.style.overflowX   = wordWrap ? 'hidden' : 'auto';
+  document.getElementById('wrapbtn').classList.toggle('active', wordWrap);
+  toast(wordWrap ? '↵ Word wrap ON' : '→ Word wrap OFF');
+}
+
+// ══════════════════════════════════════════
+// MARKDOWN PARSER
+// ══════════════════════════════════════════
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function mdToHtml(raw) {
+  if (/^\s*<!DOCTYPE/i.test(raw) || /^\s*<html[\s>]/i.test(raw)) return raw;
+  let s = raw;
+
+  // 1. Protect fenced code blocks
+  const CB = [];
+  s = s.replace(/```([\w-]*)\n([\s\S]*?)```/gm, (_, lang, code) => {
+    const L = (lang || 'code').toLowerCase();
+    const ph = '\x00CB' + CB.length + '\x00';
+    CB.push(
+      `<div class="cblk"><div class="chdr"><span class="clang">${L}</span>` +
+      `<button class="ccopy" onclick="doCopy(this)">copy</button></div>` +
+      `<pre><code>${esc(code.replace(/\n$/, ''))}</code></pre></div>`
+    );
+    return ph;
+  });
+
+  // 2. Protect inline code
+  const IC = [];
+  s = s.replace(/`([^`\n]+)`/g, (_, c) => {
+    const ph = '\x00IC' + IC.length + '\x00';
+    IC.push(`<code class="ic">${esc(c)}</code>`);
+    return ph;
+  });
+
+  // 3. Headings
+  s = s.replace(/^#{6} (.+)$/gm,'<h6>$1</h6>');
+  s = s.replace(/^#{5} (.+)$/gm,'<h5>$1</h5>');
+  s = s.replace(/^#{4} (.+)$/gm,'<h4>$1</h4>');
+  s = s.replace(/^#{3} (.+)$/gm,'<h3>$1</h3>');
+  s = s.replace(/^#{2} (.+)$/gm,'<h2>$1</h2>');
+  s = s.replace(/^# (.+)$/gm,  '<h1>$1</h1>');
+
+  // 4. Blockquote / HR
+  s = s.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+  s = s.replace(/^(?:---|\*\*\*|___)\s*$/gm, '<hr>');
+
+  // 5. Inline styles — order matters, longest markers first
+  s = s.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  s = s.replace(/\*\*(.+?)\*\*/g,     '<strong>$1</strong>');
+  s = s.replace(/__(.+?)__/g,         '<strong>$1</strong>');
+  // Use [^*\n] to prevent crossing lines or consuming bold markers
+  s = s.replace(/\*([^*\n]+?)\*/g,    '<em>$1</em>');
+  // Italic with _ — require word boundary to avoid clashing with_variable_names
+  s = s.replace(/(?<!\w)_([^_\n]+?)_(?!\w)/g, '<em>$1</em>');
+  // Strikethrough — require at least 1 char between ~~
+  s = s.replace(/~~([^~\n]+?)~~/g, '<del>$1</del>');
+
+  // 6. Images (before links)
+  s = s.replace(/!\[([^\]]*)\]\(([^\s)]+)(?:\s+"[^"]*")?\)/g,
+    '<img src="$2" alt="$1" onerror="this.remove()">');
+
+  // 7. Links
+  s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+  // 8. Tables
+  s = s.replace(/((?:^\|.+\|\s*\n)+)/gm, tbl => {
+    const rows = tbl.trim().split('\n').filter(r => !/^\|[\s\-:|]+\|$/.test(r.trim()));
+    if (!rows.length) return tbl;
+    let o = '<table><thead><tr>' +
+      rows[0].split('|').map(c=>c.trim()).filter(Boolean).map(c=>`<th>${c}</th>`).join('') +
+      '</tr></thead><tbody>';
+    for (let i = 1; i < rows.length; i++)
+      o += '<tr>' + rows[i].split('|').map(c=>c.trim()).filter(Boolean).map(c=>`<td>${c}</td>`).join('') + '</tr>';
+    return o + '</tbody></table>';
+  });
+
+  // 9. Lists — use $ end-of-line anchor to avoid eating the trailing \n
+  s = s.replace(/((?:^[ \t]*[-*+] [^\n]+\n?)+)/gm, m => {
+    const items = m.split('\n').filter(l => /^[ \t]*[-*+] /.test(l));
+    return '<ul>' + items.map(l=>`<li>${l.replace(/^[ \t]*[-*+] /,'')}</li>`).join('') + '</ul>';
+  });
+  s = s.replace(/((?:^[ \t]*\d+\. [^\n]+\n?)+)/gm, m => {
+    const items = m.split('\n').filter(l => /^[ \t]*\d+\. /.test(l));
+    return '<ol>' + items.map(l=>`<li>${l.replace(/^[ \t]*\d+\. /,'')}</li>`).join('') + '</ol>';
+  });
+
+  // 10. Paragraphs
+  // Strategy: split on 2+ consecutive newlines → separate blocks.
+  // Within each non-block chunk, single \n → <br> so 1 Enter = new line in preview.
+  // Key fix: after list/heading transforms above, those blocks already have NO trailing \n.
+  // We normalise any remaining \n sequences so the split works cleanly.
+  const BLKRE = /^(<h[1-6][\s>]|<ul[\s>]|<ol[\s>]|<li[\s>]|<blockquote|<hr[\s>]|<table|<tr[\s>]|<th[\s>]|<td[\s>]|<div[\s>]|<section|<article|<nav|<header|<footer|<figure|<style|<script|<iframe|\x00CB)/i;
+
+  // Collapse 3+ newlines to exactly 2 so the split is consistent
+  s = s.replace(/\n{3,}/g, '\n\n');
+
+  s = s.split('\n\n').map(chunk => {
+    chunk = chunk.trim();
+    if (!chunk) return '';
+    if (BLKRE.test(chunk)) return chunk;
+    // Single \n inside a text chunk → <br>
+    const lines = chunk.split('\n').map(l => l.trimEnd()).filter((l,i,a) => {
+      // drop blank lines at start/end of chunk (already trimmed above)
+      return true;
+    });
+    return '<p>' + lines.join('<br>') + '</p>';
+  }).filter(Boolean).join('\n');
+
+  // 11. Restore
+  CB.forEach((v, i) => { s = s.replace('\x00CB'+i+'\x00', v); });
+  IC.forEach((v, i) => { s = s.replace('\x00IC'+i+'\x00', v); });
+  return s;
+}
+
+// ── THEME ──
+function toggleTheme() {
+  isDark = !isDark;
+  document.body.classList.toggle('light', !isDark);
+  lastCss = ''; // force CSS resend
+  renderPreview();
+}
+
+// ══════════════════════════════════════════
+// TOOLBAR — with undo support
+// All actions: snapshot first, then modify, so Ctrl+Z restores previous state.
+// ══════════════════════════════════════════
+
+// Toggle inline wrapper: **bold**, _italic_, `code`, ~~strike~~
+// FIX: use >= blen+alen (not +1) so single-char content like `x` still toggles
+function twrap(before, after) {
+  snapshotUndo();
+  const ss = ed.selectionStart, se = ed.selectionEnd;
+  const v   = ed.value;
+  const sel = v.slice(ss, se);
+  const blen = before.length, alen = after.length;
+
+  // Case 1: selected text is wrapped exactly — e.g. user selects `**foo**`, `_x_`, `~~y~~`
+  // Minimum: blen + alen chars (even empty inner content counts)
+  if (sel.length >= blen + alen && sel.slice(0, blen) === before && sel.slice(sel.length - alen) === after) {
+    const inner = sel.slice(blen, sel.length - alen);
+    ed.value = v.slice(0, ss) + inner + v.slice(se);
+    ed.selectionStart = ss;
+    ed.selectionEnd   = ss + inner.length;
+  }
+  // Case 2: cursor (no selection) is inside empty markers — e.g. `**|**`
+  else if (ss === se && v.slice(ss - blen, ss) === before && v.slice(se, se + alen) === after) {
+    ed.value = v.slice(0, ss - blen) + v.slice(se + alen);
+    ed.selectionStart = ed.selectionEnd = ss - blen;
+  }
+  // Case 3: selection has no wrapper but context around it is wrapped
+  // e.g. cursor is between `_` and `_` with text selected: _ [selected] _
+  else if (v.slice(ss - blen, ss) === before && v.slice(se, se + alen) === after) {
+    // remove outer markers, keep selection
+    ed.value = v.slice(0, ss - blen) + sel + v.slice(se + alen);
+    ed.selectionStart = ss - blen;
+    ed.selectionEnd   = ss - blen + sel.length;
+  }
+  // Case 4: apply wrapper
+  else {
+    const text = sel || 'teks';
+    ed.value = v.slice(0, ss) + before + text + after + v.slice(se);
+    ed.selectionStart = ss + blen;
+    ed.selectionEnd   = ss + blen + text.length;
+  }
+  ed.focus();
+  updateAll();
+}
+
+function tline(prefix) {
+  snapshotUndo();
+  const ss = ed.selectionStart, v = ed.value;
+  const ls  = v.lastIndexOf('\n', ss - 1) + 1;
+  const le  = v.indexOf('\n', ss);
+  const end = le === -1 ? v.length : le;
+  const line = v.slice(ls, end);
+  let newLine;
+  if (line.startsWith(prefix)) {
+    newLine = line.slice(prefix.length);
+  } else {
+    newLine = prefix + line.replace(/^(#{1,6} |> |- |\d+\. )/, '');
+  }
+  const diff = newLine.length - line.length;
+  ed.value = v.slice(0, ls) + newLine + v.slice(end);
+  ed.selectionStart = ed.selectionEnd = Math.max(ls, ss + diff);
+  ed.focus(); updateAll();
+}
+
+function tcodeblock() {
+  snapshotUndo();
+  const ss = ed.selectionStart, se = ed.selectionEnd, v = ed.value;
+  const sel = v.slice(ss, se);
+  if (/^```[\w-]*\n[\s\S]*\n```$/.test(sel.trim())) {
+    const inner = sel.trim().replace(/^```[\w-]*\n/, '').replace(/\n```$/, '');
+    ed.value = v.slice(0, ss) + inner + v.slice(se);
+    ed.selectionStart = ss; ed.selectionEnd = ss + inner.length;
+  } else {
+    const lang = sel.includes('\n') ? 'javascript' : '';
+    const wrapped = '```' + lang + '\n' + (sel || 'kode di sini') + '\n```';
+    ed.value = v.slice(0, ss) + wrapped + v.slice(se);
+    ed.selectionStart = ss; ed.selectionEnd = ss + wrapped.length;
+  }
+  ed.focus(); updateAll();
+}
+
+function tlink() {
+  snapshotUndo();
+  const ss = ed.selectionStart, se = ed.selectionEnd, v = ed.value;
+  const label  = v.slice(ss, se).trim() || 'teks link';
+  const insert = `[${label}](https://url.com)`;
+  ed.value = v.slice(0, ss) + insert + v.slice(se);
+  ed.selectionStart = ss; ed.selectionEnd = ss + insert.length;
+  ed.focus(); updateAll();
+}
+
+function timage() {
+  snapshotUndo();
+  const ss = ed.selectionStart, se = ed.selectionEnd, v = ed.value;
+  const alt    = v.slice(ss, se).trim() || 'deskripsi gambar';
+  const insert = `![${alt}](https://url-gambar.com)`;
+  ed.value = v.slice(0, ss) + insert + v.slice(se);
+  ed.selectionStart = ss; ed.selectionEnd = ss + insert.length;
+  ed.focus(); updateAll();
+}
+
+function thr() {
+  snapshotUndo();
+  const ss = ed.selectionStart, v = ed.value;
+  const le  = v.indexOf('\n', ss);
+  const end = le === -1 ? v.length : le;
+  const ins = '\n---\n';
+  ed.value = v.slice(0, end) + ins + v.slice(end);
+  ed.selectionStart = ed.selectionEnd = end + ins.length;
+  ed.focus(); updateAll();
+}
+
+function clearEd() {
+  if (confirm('Hapus semua konten editor?')) {
+    snapshotUndo();
+    ed.value = ''; lastHtml = ''; lastCss = '';
+    updateAll();
+  }
+}
+
+// ── KEYBOARD SHORTCUTS ──
+function onKey(e) {
+  const mod = e.ctrlKey || e.metaKey;
+
+  // Undo — always preventDefault to avoid browser native undo conflicting
+  // with our custom stack. Native undo + ed.value= mix causes ghost states.
+  if (mod && !e.shiftKey && e.key === 'z') {
+    e.preventDefault();
+    applyUndo();
+    return;
+  }
+  // Redo — Ctrl+Y or Ctrl+Shift+Z
+  if ((mod && e.shiftKey && e.key === 'z') || (mod && !e.shiftKey && e.key === 'y')) {
+    e.preventDefault();
+    applyRedo();
+    return;
+  }
+
+  if (mod && e.key === 'b') { e.preventDefault(); twrap('**','**'); }
+  if (mod && e.key === 'i') { e.preventDefault(); twrap('_','_'); }
+  if (mod && e.key === 'k') { e.preventDefault(); tlink(); }
+  if (mod && e.key === '`') { e.preventDefault(); twrap('`','`'); }
+  if (mod && e.key === 's') { e.preventDefault(); exportMD(); }
+
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    snapshotUndo();
+    const ss = ed.selectionStart, se = ed.selectionEnd, v = ed.value;
+    ed.value = v.slice(0, ss) + '  ' + v.slice(se);
+    ed.selectionStart = ed.selectionEnd = ss + 2;
+    updateAll();
+  }
+}
+
+// ── EXPORT ──
+function exportMD() {
+  dl(ed.value, 'dokumen.md', 'text/markdown');
+  toast('✓ Disimpan sebagai dokumen.md');
+}
+function exportHTML() {
+  const raw = ed.value;
+  const isDoc = /^\s*<!DOCTYPE/i.test(raw) || /^\s*<html[\s>]/i.test(raw);
+  const body  = isDoc ? raw : `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${buildCss()}</style><script>function doCopy(b){var c=b.closest('.cblk').querySelector('code').innerText;navigator.clipboard.writeText(c).then(function(){b.textContent='copied!';setTimeout(function(){b.textContent='copy'},1600)})};<\/script></head><body>${mdToHtml(raw)}</body></html>`;
+  dl(body, 'dokumen.html', 'text/html');
+  toast('✓ Disimpan sebagai dokumen.html');
+}
+function dl(content, name, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+
+// ── GOOGLE DRIVE ──
+let _activeCid = GDRIVE_CID || '';
+
+function openDM() {
+  const inp = document.getElementById('cid-input');
+  inp.value = _activeCid || sessionStorage.getItem('gdrive_cid') || '';
+  document.getElementById('cid-err').textContent = '';
+  if (driveToken) {
+    document.getElementById('dm-setup').style.display = 'none';
+    document.getElementById('dm-connected').style.display = 'block';
+  } else {
+    document.getElementById('dm-setup').style.display = 'block';
+    document.getElementById('dm-connected').style.display = 'none';
+  }
+  document.getElementById('dm').classList.remove('h');
+}
+function closeDM() { document.getElementById('dm').classList.add('h'); }
+document.getElementById('dm').addEventListener('click', e => {
+  if (e.target === document.getElementById('dm')) closeDM();
+});
+
+function initDrive() {
+  const inp = document.getElementById('cid-input');
+  const cid = inp.value.trim();
+  const errEl = document.getElementById('cid-err');
+  if (!cid) { errEl.textContent = '⚠ Client ID tidak boleh kosong.'; inp.focus(); return; }
+  if (!cid.endsWith('.apps.googleusercontent.com')) {
+    errEl.textContent = '⚠ Harus diakhiri .apps.googleusercontent.com'; inp.focus(); return;
+  }
+  errEl.textContent = 'Menghubungkan...';
+  _activeCid = cid;
+  sessionStorage.setItem('gdrive_cid', cid);
+  if (!window.google) {
+    const sc = document.createElement('script');
+    sc.src = 'https://accounts.google.com/gsi/client';
+    sc.onload  = startDrive;
+    sc.onerror = () => { errEl.textContent = '⚠ Gagal load Google Identity Services. Cek koneksi.'; };
+    document.head.appendChild(sc);
+  } else startDrive();
+}
+
+function startDrive() {
+  const errEl = document.getElementById('cid-err');
+  try {
+    google.accounts.oauth2.initTokenClient({
+      client_id: _activeCid,
+      scope: GDRIVE_SCOPE,
+      callback: resp => {
+        if (resp.error) {
+          errEl.textContent = '⚠ Login gagal: ' + resp.error;
+          toast('⚠ Login gagal: ' + resp.error);
+          return;
+        }
+        driveToken = resp.access_token;
+        // Fetch user info
+        fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: 'Bearer ' + driveToken }
+        }).then(r => r.json()).then(info => {
+          document.getElementById('dm-user').textContent = '👤 ' + (info.name || info.email || 'Akun Google');
+        }).catch(() => { document.getElementById('dm-user').textContent = '👤 Akun Google'; });
+        // Switch modal view
+        document.getElementById('dm-setup').style.display = 'none';
+        document.getElementById('dm-connected').style.display = 'block';
+        // Update header button
+        document.getElementById('gdvbtn').classList.add('on');
+        document.getElementById('gdvlbl').textContent = 'Drive Terhubung';
+        const p = document.getElementById('gdvpill');
+        p.textContent = 'ON';
+        p.style.cssText = 'font-size:10px;padding:1px 6px;border-radius:9px;border:1px solid #3ecf8e44;background:#3ecf8e22;color:#3ecf8e';
+        toast('✓ Google Drive terhubung! Ctrl+S sync ke Drive.');
+      }
+    }).requestAccessToken();
+  } catch(err) {
+    errEl.textContent = '⚠ ' + err.message;
+    toast('⚠ Error: ' + err.message);
+  }
+}
+
+function disconnectDrive() {
+  driveToken = null; _activeCid = '';
+  sessionStorage.removeItem('gdrive_cid');
+  document.getElementById('gdvbtn').classList.remove('on');
+  document.getElementById('gdvlbl').textContent = 'Google Drive';
+  const p = document.getElementById('gdvpill');
+  p.textContent = 'OFF'; p.style.cssText = '';
+  closeDM();
+  toast('Google Drive diputus.');
+}
+
+async function saveToDrive(content, filename) {
+  if (!driveToken) return;
+  const meta = JSON.stringify({ name: filename, mimeType: 'text/markdown' });
+  const form = new FormData();
+  form.append('metadata', new Blob([meta], { type: 'application/json' }));
+  form.append('file',     new Blob([content], { type: 'text/markdown' }));
+  try {
+    const r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+      method: 'POST', headers: { Authorization: 'Bearer ' + driveToken }, body: form
+    });
+    const j = await r.json();
+    if (j.id) toast('✓ Tersimpan di Google Drive: ' + filename);
+    else if (j.error?.code === 401) { toast('⚠ Sesi Drive habis, hubungkan ulang.'); disconnectDrive(); }
+    else toast('⚠ Drive error: ' + (j.error?.message || JSON.stringify(j)));
+  } catch(err) { toast('⚠ Gagal kirim ke Drive: ' + err.message); }
+}
+
+
+// ── TOAST ──
+let toastT;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('on'), 2600);
+}
+
+// ── DIVIDER DRAG ──
+let dragging = false, mLeft = 0, mW = 0;
+dv.addEventListener('mousedown', e => {
+  e.preventDefault();
+  dragging = true;
+  dv.classList.add('drag');
+  ov.classList.add('on');
+  document.body.style.userSelect = 'none';
+  const r = document.getElementById('main').getBoundingClientRect();
+  mLeft = r.left; mW = r.width;
+});
+function doDrag(cx) {
+  if (!dragging) return;
+  const MIN=140, DIV=4;
+  const rel = Math.max(MIN, Math.min(mW - MIN - DIV, cx - mLeft));
+  epane.style.width = rel + 'px';
+}
+function stopDrag() {
+  if (!dragging) return;
+  dragging = false;
+  dv.classList.remove('drag');
+  ov.classList.remove('on');
+  document.body.style.userSelect = '';
+}
+document.addEventListener('mousemove', e => doDrag(e.clientX));
+document.addEventListener('mouseup',   stopDrag);
+ov.addEventListener('mousemove', e => doDrag(e.clientX));
+ov.addEventListener('mouseup',   stopDrag);
+</script>
+</body>
+</html>
